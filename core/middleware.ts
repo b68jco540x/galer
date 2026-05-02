@@ -1,12 +1,13 @@
 import { Bot, Context } from "https://deno.land/x/grammy@v1.42.0/mod.ts";
 import type { Env } from "./types.ts";
 import { isAllowed } from "./auth.ts";
+import { getLogging } from "./kv.ts";
 
 export function applyMiddleware(bot: Bot, env: Env) {
   bot.use(async (ctx, next) => {
     if (ctx.chat?.type !== "private") return;
     if (!(await isAllowed(env, String(ctx.from?.id)))) return;
-    logMessage(env, ctx);
+    if (await getLogging(env.KV)) logMessage(env, ctx);
     await next();
   });
 }

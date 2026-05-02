@@ -2,7 +2,7 @@ import { Bot } from "https://deno.land/x/grammy@v1.42.0/mod.ts";
 import type { Env } from "../core/types.ts";
 import { registerModule } from "../core/index.ts";
 import { isOwner } from "../core/auth.ts";
-import { getUserData, saveUserData, getWhitelist, saveWhitelist } from "../core/kv.ts";
+import { getUserData, saveUserData, getWhitelist, saveWhitelist, getLogging, setLogging } from "../core/kv.ts";
 import { safeReply } from "../core/chat.ts";
 
 registerModule({
@@ -30,6 +30,20 @@ registerModule({
       ud.system = prompt;
       await saveUserData(env.KV, userId, ud);
       await ctx.reply("System prompt updated.", { reply_parameters: { message_id: ctx.message!.message_id } });
+    });
+
+    // /settings (owner)
+    bot.command("settings", async (ctx) => {
+      if (!isOwner(env, String(ctx.from!.id))) return;
+      const arg = ctx.match?.trim().toLowerCase() ?? "";
+      if (!arg) {
+        const logging = await getLogging(env.KV);
+        await safeReply(ctx, `*Settings*\n\nLogging: ${logging ? "on ✓" : "off ✗"}\n\nUse /settings logging on|off`, { reply_parameters: { message_id: ctx.message!.message_id } });
+        return;
+      }
+      if (arg === "logging on")  { await setLogging(env.KV, true);  await ctx.reply("Logging enabled.",  { reply_parameters: { message_id: ctx.message!.message_id } }); return; }
+      if (arg === "logging off") { await setLogging(env.KV, false); await ctx.reply("Logging disabled.", { reply_parameters: { message_id: ctx.message!.message_id } }); return; }
+      await ctx.reply("Unknown setting. Usage: /settings logging on|off", { reply_parameters: { message_id: ctx.message!.message_id } });
     });
 
     // /add (owner)
