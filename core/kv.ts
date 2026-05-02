@@ -45,3 +45,12 @@ export async function getLogging(kv: KVNamespace): Promise<boolean> {
 export async function setLogging(kv: KVNamespace, val: boolean) {
   await kv.put("settings:logging", val ? "1" : "0");
 }
+
+export async function getWhitelistEnabled(kv: KVNamespace): Promise<boolean> {
+  try { return (await kv.get("settings:whitelist")) === "1"; }
+  catch { return false; }
+}
+
+export async function setWhitelistEnabled(kv: KVNamespace, val: boolean) {
+  await kv.put("settings:whitelist", val ? "1" : "0");
+}
