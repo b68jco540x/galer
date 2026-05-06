@@ -20,15 +20,41 @@ jobs:
         run: deno install --global -A -r -f --name denoflare https://raw.githubusercontent.com/skymethod/denoflare/v0.7.0/cli/cli.ts
 
       - name: Inject secrets into .denoflare
+        env:
+          BOT_TOKEN:       ${{ secrets.BOT_TOKEN }}
+          GROQ_API_KEY:    ${{ secrets.GROQ_API_KEY }}
+          OWNER_ID:        ${{ secrets.OWNER_ID }}
+          TAVILY_API_KEY:  ${{ secrets.TAVILY_API_KEY }}
+          LOG_CHAT_ID:     ${{ secrets.LOG_CHAT_ID }}
+          KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
+          CF_ACCOUNT_ID:   ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN:    ${{ secrets.CF_API_TOKEN }}
         run: |
-          sed -i "s/PLACEHOLDER_BOT_TOKEN/${{ secrets.BOT_TOKEN }}/g"             .denoflare
-          sed -i "s/PLACEHOLDER_GROQ_API_KEY/${{ secrets.GROQ_API_KEY }}/g"       .denoflare
-          sed -i "s/PLACEHOLDER_OWNER_ID/${{ secrets.OWNER_ID }}/g"               .denoflare
-          sed -i "s/PLACEHOLDER_TAVILY_API_KEY/${{ secrets.TAVILY_API_KEY }}/g"   .denoflare
-          sed -i "s/PLACEHOLDER_LOG_CHAT_ID/${{ secrets.LOG_CHAT_ID }}/g"         .denoflare
-          sed -i "s/PLACEHOLDER_KV_NAMESPACE_ID/${{ secrets.KV_NAMESPACE_ID }}/g" .denoflare
-          sed -i "s/PLACEHOLDER_CF_ACCOUNT_ID/${{ secrets.CF_ACCOUNT_ID }}/g"     .denoflare
-          sed -i "s/PLACEHOLDER_CF_API_TOKEN/${{ secrets.CF_API_TOKEN }}/g"       .denoflare
+          python3 - << 'PY'
+          import os, re
+
+          with open(".denoflare", "r") as f:
+              content = f.read()
+
+          replacements = {
+              "PLACEHOLDER_BOT_TOKEN":       os.environ["BOT_TOKEN"],
+              "PLACEHOLDER_GROQ_API_KEY":    os.environ["GROQ_API_KEY"],
+              "PLACEHOLDER_OWNER_ID":        os.environ["OWNER_ID"],
+              "PLACEHOLDER_TAVILY_API_KEY":  os.environ["TAVILY_API_KEY"],
+              "PLACEHOLDER_LOG_CHAT_ID":     os.environ["LOG_CHAT_ID"],
+              "PLACEHOLDER_KV_NAMESPACE_ID": os.environ["KV_NAMESPACE_ID"],
+              "PLACEHOLDER_CF_ACCOUNT_ID":   os.environ["CF_ACCOUNT_ID"],
+              "PLACEHOLDER_CF_API_TOKEN":    os.environ["CF_API_TOKEN"],
+          }
+
+          for placeholder, value in replacements.items():
+              content = content.replace(placeholder, value)
+
+          with open(".denoflare", "w") as f:
+              f.write(content)
+
+          print("Injection done.")
+          PY
 
       - name: Deploy
-        run: denoflare push galer --profile main
+        run: denoflare push galer
