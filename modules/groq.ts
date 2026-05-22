@@ -1,29 +1,25 @@
 import type { Env } from "../core/types.ts";
 import type { Provider, BotModule } from "../core/index.ts";
-import { registerProvider, registerModule } from "../core/index.ts";
+import { registerProvider, registerModule, getAllProviders } from "../core/index.ts";
 import { getUserData, saveUserData, getModels } from "../core/kv.ts";
 import { safeReply } from "../core/chat.ts";
 import { Bot } from "https://deno.land/x/grammy@v1.42.0/mod.ts";
 
 const VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
-
 const TEXT_EXTS = [".txt", ".md", ".csv", ".json", ".js", ".ts", ".py", ".html", ".css", ".yaml", ".yml", ".sh", ".xml"];
+
+function toBase64(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 8192)
+    bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  return btoa(bin);
+}
 
 async function getFileUrl(token: string, fileId: string): Promise<string> {
   const res = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${fileId}`);
   const data = await res.json();
   return `https://api.telegram.org/file/bot${token}/${data.result.file_path}`;
-}
-
-// Safe base64 — avoids call stack overflow on large images
-function toBase64(buf: ArrayBuffer): string {
-  const bytes = new Uint8Array(buf);
-  let bin = "";
-  const chunk = 8192;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return btoa(bin);
 }
 
 const groqProvider: Provider = {
@@ -45,10 +41,9 @@ const groqProvider: Provider = {
   },
 
   async vision(env, fileId, prompt) {
-    const imageUrl = await getFileUrl(env.BOT_TOKEN, fileId);
-    const imgRes = await fetch(imageUrl);
-    const buf = await imgRes.arrayBuffer();
-    const b64 = toBase64(buf);
+    const url = await getFileUrl(env.BOT_TOKEN, fileId);
+    const imgRes = await fetch(url);
+    const b64 = toBase64(await imgRes.arrayBuffer());
     const mime = imgRes.headers.get("content-type") ?? "image/jpeg";
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -107,35 +102,29 @@ const groqModule: BotModule = {
       await ctx.reply(result, { reply_parameters: { message_id: ctx.message!.message_id } });
     });
 
-    // /refresh
+    // /refresh — fetches from all registered providers
     bot.command("refresh", async (ctx) => {
       await ctx.replyWithChatAction("typing");
-      const models = await groqProvider.fetchModels(env);
+      const all = await Promise.all(getAllProviders().map(p => p.fetchModels(env).catch(() => [])));
+      const models = all.flat().sort();
       if (!models.length) { await ctx.reply("Failed to fetch models.", { reply_parameters: { message_id: ctx.message!.message_id } }); return; }
       await env.KV.put("models", JSON.stringify(models));
       await ctx.reply(`Refreshed. ${models.length} models available.`, { reply_parameters: { message_id: ctx.message!.message_id } });
     });
 
-    // Document handler — text/code files only
+    // Document handler
     bot.on("message:document", async (ctx) => {
       const doc = ctx.message.document;
       const name = doc.file_name ?? "";
       const isText = TEXT_EXTS.some(ext => name.toLowerCase().endsWith(ext));
-      if (!isText) {
-        await ctx.reply(`Unsupported file type. Supported: ${TEXT_EXTS.join(", ")}`, { reply_parameters: { message_id: ctx.message!.message_id } });
-        return;
-      }
+      if (!isText) { await ctx.reply(`Unsupported file type. Supported: ${TEXT_EXTS.join(", ")}`, { reply_parameters: { message_id: ctx.message!.message_id } }); return; }
       const prompt = ctx.message.caption?.trim() ?? "Summarize or analyze this file.";
       const typing = setInterval(() => ctx.replyWithChatAction("typing"), 4000);
       await ctx.replyWithChatAction("typing");
       try {
         const url = await getFileUrl(env.BOT_TOKEN, doc.file_id);
-        const res = await fetch(url);
-        const text = await res.text();
-        if (text.length > 12000) {
-          await ctx.reply("File too large (max ~12k chars).", { reply_parameters: { message_id: ctx.message!.message_id } });
-          return;
-        }
+        const text = await (await fetch(url)).text();
+        if (text.length > 12000) { await ctx.reply("File too large (max ~12k chars).", { reply_parameters: { message_id: ctx.message!.message_id } }); return; }
         const ud = await getUserData(env.KV, String(ctx.from!.id));
         const reply = await groqProvider.chat(env,
           [{ role: "user", content: `File: ${name}\n\n\`\`\`\n${text}\n\`\`\`\n\n${prompt}` }],
@@ -144,9 +133,7 @@ const groqModule: BotModule = {
         await safeReply(ctx, reply, { reply_parameters: { message_id: ctx.message!.message_id } });
       } catch (e) {
         await ctx.reply(`Error: ${e instanceof Error ? e.message : String(e)}`, { reply_parameters: { message_id: ctx.message!.message_id } });
-      } finally {
-        clearInterval(typing);
-      }
+      } finally { clearInterval(typing); }
     });
   },
 };
