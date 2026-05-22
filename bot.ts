@@ -10,6 +10,8 @@ export type { Env };
 // Load modules — import order = register order
 // To disable a module: comment out its import
 import "./modules/groq.ts";
+//import "./modules/gemini.ts";
+import "./modules/openrouter.ts";
 import "./modules/search.ts";
 import "./modules/admin.ts";
 

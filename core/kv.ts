@@ -3,8 +3,8 @@ import type { KVNamespace } from "https://raw.githubusercontent.com/skymethod/de
 export interface Message { role: "user" | "assistant"; content: string; }
 export interface UserData { messages: Message[]; model: string; system: string; }
 
-export const DEFAULT_MODEL = "llama-3.3-70b-versatile";
-export const DEFAULT_SYSTEM = "You are a concise AI assistant. Reply briefly and directly. No filler, no repetition. Use markdown only when helpful.";
+export const DEFAULT_MODEL = "openrouter/owl-alpha";
+export const DEFAULT_SYSTEM = "You are a concise AI assistant. Keep responses under 100 words unless asked for detail. Use bullet points for lists, markdown for emphasis. No filler, no apologies, no pleasantries. For complex requests, use a clear numbered sequence.";
 export const HISTORY_TTL = 8 * 60 * 60;
 export const MAX_HISTORY = 20;
 

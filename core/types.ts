@@ -5,6 +5,7 @@ export interface Env {
   GROQ_API_KEY: string;
   OWNER_ID: string;
   GEMINI_API_KEY?: string;
+  OPENROUTER_API_KEY?: string;
   TAVILY_API_KEY?: string;
   LOG_CHAT_ID?: string;
   KV: KVNamespace;

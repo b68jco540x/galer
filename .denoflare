@@ -5,11 +5,13 @@
       "path": "bot.ts",
       "localPort": 3030,
       "bindings": {
-        "BOT_TOKEN":      { "value": "PLACEHOLDER_BOT_TOKEN" },
-        "GROQ_API_KEY":   { "value": "PLACEHOLDER_GROQ_API_KEY" },
-        "OWNER_ID":       { "value": "PLACEHOLDER_OWNER_ID" },
-        "TAVILY_API_KEY": { "value": "PLACEHOLDER_TAVILY_API_KEY" },
-        "LOG_CHAT_ID":    { "value": "PLACEHOLDER_LOG_CHAT_ID" },
+        "BOT_TOKEN":       { "value": "PLACEHOLDER_BOT_TOKEN" },
+        "GROQ_API_KEY":    { "value": "PLACEHOLDER_GROQ_API_KEY" },
+        "OWNER_ID":        { "value": "PLACEHOLDER_OWNER_ID" },
+        "GEMINI_API_KEY":  { "value": "PLACEHOLDER_GEMINI_API_KEY" },
+        "OPENROUTER_API_KEY": { "value": "PLACEHOLDER_OPENROUTER_API_KEY" },
+        "TAVILY_API_KEY":  { "value": "PLACEHOLDER_TAVILY_API_KEY" },
+        "LOG_CHAT_ID":     { "value": "PLACEHOLDER_LOG_CHAT_ID" },
         "KV": { "kvNamespace": "PLACEHOLDER_KV_NAMESPACE_ID" }
       },
       "workersDev": true
