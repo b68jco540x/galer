@@ -24,6 +24,7 @@ jobs:
           BOT_TOKEN:       ${{ secrets.BOT_TOKEN }}
           GROQ_API_KEY:    ${{ secrets.GROQ_API_KEY }}
           OWNER_ID:        ${{ secrets.OWNER_ID }}
+          GEMINI_API_KEY:  ${{ secrets.GEMINI_API_KEY }}
           TAVILY_API_KEY:  ${{ secrets.TAVILY_API_KEY }}
           LOG_CHAT_ID:     ${{ secrets.LOG_CHAT_ID }}
           KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
@@ -31,7 +32,7 @@ jobs:
           CF_API_TOKEN:    ${{ secrets.CF_API_TOKEN }}
         run: |
           python3 - << 'PY'
-          import os, re
+          import os
 
           with open(".denoflare", "r") as f:
               content = f.read()
@@ -40,6 +41,7 @@ jobs:
               "PLACEHOLDER_BOT_TOKEN":       os.environ["BOT_TOKEN"],
               "PLACEHOLDER_GROQ_API_KEY":    os.environ["GROQ_API_KEY"],
               "PLACEHOLDER_OWNER_ID":        os.environ["OWNER_ID"],
+              "PLACEHOLDER_GEMINI_API_KEY":  os.environ["GEMINI_API_KEY"],
               "PLACEHOLDER_TAVILY_API_KEY":  os.environ["TAVILY_API_KEY"],
               "PLACEHOLDER_LOG_CHAT_ID":     os.environ["LOG_CHAT_ID"],
               "PLACEHOLDER_KV_NAMESPACE_ID": os.environ["KV_NAMESPACE_ID"],
