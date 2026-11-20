@@ -9,7 +9,10 @@
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": {
+      "tg-rich-messages": ["./tg-rich-messages/src/rich.ts"]
+    }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "tg-rich-messages/src/**/*"]
 }

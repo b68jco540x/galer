@@ -9,7 +9,8 @@
     "tail": "wrangler tail"
   },
   "dependencies": {
-    "grammy": "^1.44.0"
+    "grammy": "^1.44.0",
+    "tg-rich-messages": "file:./tg-rich-messages"
   },
   "devDependencies": {
     "wrangler": "^4.101.0",

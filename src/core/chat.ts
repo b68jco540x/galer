@@ -3,6 +3,7 @@ import type { Env } from "./types.js";
 import { getUserData, saveUserData, MAX_HISTORY } from "./kv.js";
 import { getProvider } from "./index.js";
 import { cfVision } from "./vision.js";
+import { aiResponseToRichDoc } from "./rich-helper.js";
 
 // Base64 image encoding is sync/CPU-bound — keep it under CF Workers' CPU
 // time budget (tight on the Free plan) instead of risking a hard isolate kill
@@ -106,14 +107,21 @@ export async function safeReply(
   text: string,
   opts: Record<string, unknown> = {}
 ) {
-  const clean = stripThinking(text) || "(empty response)";
-  const chunks = splitMessage(clean, TELEGRAM_MAX_LEN);
+  let html = "(empty response)";
+  try {
+    const docObj = aiResponseToRichDoc(text);
+    html = docObj.toHTML();
+  } catch {
+    html = stripThinking(text) || "(empty response)";
+  }
+
+  const chunks = splitMessage(html, TELEGRAM_MAX_LEN);
   for (let i = 0; i < chunks.length; i++) {
     // only the first chunk replies to the original message; rest just follow in-chat
     const { reply_parameters, ...rest } = opts as { reply_parameters?: unknown };
     const chunkOpts = i === 0 ? opts : rest;
     try {
-      await ctx.reply(chunks[i], { parse_mode: "Markdown", ...chunkOpts });
+      await ctx.reply(chunks[i], { parse_mode: "HTML", ...chunkOpts });
     } catch {
       await ctx.reply(chunks[i], chunkOpts);
     }
